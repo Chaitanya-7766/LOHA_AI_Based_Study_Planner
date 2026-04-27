@@ -308,8 +308,20 @@ def _load_user_data(uid, name):
                 "peak_time":      p.get("peak_time", "evening"),
                 "learning_style": p.get("learning_style", "practice"),
             }
+            # Existing users: a profile row already in DB means they pre-date
+            # onboarding — mark it done in session AND backfill the DB column.
             if p.get("onboarding_done"):
                 st.session_state.onboarding_done = True
+            else:
+                # Pre-existing user whose row was created before the onboarding
+                # feature existed (or whose flag was never set). Treat them as
+                # having completed onboarding and persist the flag so we never
+                # ask them again.
+                st.session_state.onboarding_done = True
+                try:
+                    sb.table("profiles").update({"onboarding_done": True}).eq("id", uid).execute()
+                except:
+                    pass
     except:
         pass
 

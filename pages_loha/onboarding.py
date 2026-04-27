@@ -19,6 +19,7 @@ def should_show():
     - User is logged in
     - Has NOT completed onboarding (not stored in Supabase profile)
     - Has NOT skipped it this session
+    - Is a brand-new user (no profile row and no subjects in DB)
     """
     if not st.session_state.get("user"):
         return False
@@ -30,6 +31,23 @@ def should_show():
     if st.session_state.get("subjects"):
         st.session_state.onboarding_done = True
         return False
+    # Safety net: if a profile row already exists in DB for this user,
+    # they are an existing user — skip onboarding and backfill the flag.
+    uid = st.session_state.get("user_id")
+    if uid:
+        try:
+            sb = db.get_supabase()
+            if sb:
+                rows = sb.table("profiles").select("id").eq("id", uid).execute().data
+                if rows:
+                    st.session_state.onboarding_done = True
+                    try:
+                        sb.table("profiles").update({"onboarding_done": True}).eq("id", uid).execute()
+                    except:
+                        pass
+                    return False
+        except:
+            pass
     return True
 
 def show():

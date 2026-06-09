@@ -204,9 +204,14 @@ def init_models():
     cache_path = MODEL_DIR / "models.pkl"
     if cache_path.exists():
         print("✅ Loading cached ML models...")
-        with open(cache_path, "rb") as f:
-            _models = pickle.load(f)
-        return
+        try:
+            with open(cache_path, "rb") as f:
+                _models = pickle.load(f)
+            return
+        except Exception as exc:
+            print(f"❌ Failed to load cached models from {cache_path}: {exc}")
+            print("🧠 Re-training models and recreating the cache...")
+            _models = {}
 
     print("🧠 Training ML models on synthetic data...")
     _models["score_predictor"]    = train_score_predictor()

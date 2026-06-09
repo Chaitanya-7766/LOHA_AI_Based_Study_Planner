@@ -95,7 +95,12 @@ def delete_subject(name: str):
 def save_progress(entry: dict):
     sb = get_supabase()
     if sb:
-        sb.table("progress").insert(_with_user(entry)).execute()
+        payload = _with_user(entry)
+        payload.pop("completed_topics", None)
+        try:
+            sb.table("progress").insert(payload).execute()
+        except Exception as e:
+            print("Error saving progress:", e)
 
 def get_progress():
     sb = get_supabase()

@@ -18,8 +18,9 @@ def show_auth():
 
     # 🔥 If just logged out → show login
     if st.session_state.get("_force_logout"):
+        message = st.session_state.pop("_logout_message", None)
         st.session_state.pop("_force_logout", None)
-        _render_auth_ui()
+        _render_auth_ui(message=message)
         return False
 
     # 🔁 Restore session (Supabase)
@@ -31,7 +32,7 @@ def show_auth():
     return False
 
 
-def signout():
+def signout(reason=None):
     try:
         sb = db.get_supabase()
         if sb:
@@ -43,8 +44,10 @@ def signout():
     for key in list(st.session_state.keys()):
         del st.session_state[key]
 
-    # ✅ Force logout flag
+    # ✅ Force logout flag and optional message
     st.session_state["_force_logout"] = True
+    if reason:
+        st.session_state["_logout_message"] = reason
 
     st.rerun()
 
@@ -80,7 +83,9 @@ def _restore_session():
 # LOGIN / SIGNUP UI
 # ─────────────────────────────────────────────────────────────────────
 
-def _render_auth_ui():
+def _render_auth_ui(message=None):
+    if message:
+        st.warning(message)
     st.markdown("""
     <style>
     [data-testid="stSidebar"],

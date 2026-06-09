@@ -5,7 +5,7 @@ import streamlit as st
 SUPABASE_URL = "https://xntagxcagezzncqnqxkb.supabase.co"
 SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhudGFneGNhZ2V6em5jcW5xeGtiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTgwODIzMTAsImV4cCI6MjA3MzY1ODMxMH0.-BiPqlT23VNLfdeO5SiTeScHiQfdptN7BzoQk6120so"
 
-@st.cache_resource
+
 def get_supabase() -> Client:
     if not SUPABASE_URL or not SUPABASE_KEY:
         return None

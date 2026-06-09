@@ -65,7 +65,19 @@ def _restore_session():
         sb = db.get_supabase()
         if not sb:
             return False
+
+        # Try live session first.
         session = sb.auth.get_session()
+        if not session or not session.user:
+            access_token = st.session_state.get("_access_token")
+            refresh_token = st.session_state.get("_refresh_token")
+            if access_token and refresh_token:
+                try:
+                    sb.auth.set_session(access_token, refresh_token)
+                    session = sb.auth.get_session()
+                except Exception:
+                    session = None
+
         if session and session.user:
             user  = session.user
             name  = (user.user_metadata or {}).get("full_name") or user.email.split("@")[0]
@@ -160,6 +172,9 @@ def _signin_form():
         with st.spinner("Signing in..."):
             result = _do_signin(email.strip(), password)
         if result["success"]:
+            if result.get("session"):
+                st.session_state["_access_token"] = result["session"].access_token
+                st.session_state["_refresh_token"] = result["session"].refresh_token
             _boot_user(result["user"], result.get("name", email.split("@")[0]))
             st.session_state["_auth_success"] = True
             for k in ["auth_tab", "signin_email", "signin_password"]:
@@ -192,6 +207,9 @@ def _signup_form():
                 msg.markdown('<div class="amsg-s">Account created! Check your email to confirm, then sign in.</div>', unsafe_allow_html=True)
                 st.session_state.auth_tab = "signin"; st.rerun()
             else:
+                if result.get("session"):
+                    st.session_state["_access_token"] = result["session"].access_token
+                    st.session_state["_refresh_token"] = result["session"].refresh_token
                 _boot_user(result["user"], name.strip())
                 # Clear auth UI state so no login portal flashes on the next render
                 st.session_state["_auth_success"] = True
@@ -218,7 +236,7 @@ def _do_signin(email, password):
         if not user:
             return {"success": False, "error": "Invalid email or password."}
         name = (user.user_metadata or {}).get("full_name") or email.split("@")[0]
-        return {"success": True, "user": user, "name": name}
+        return {"success": True, "user": user, "name": name, "session": res.session}
     except Exception as e:
         err = str(e).lower()
         if "invalid" in err or "credentials" in err:
@@ -238,7 +256,7 @@ def _do_signup(email, password, name):
             return {"success": False, "error": "Signup failed. Please try again."}
         if not res.session:
             return {"success": True, "user": user, "needs_confirmation": True}
-        return {"success": True, "user": user}
+        return {"success": True, "user": user, "session": res.session}
     except Exception as e:
         err = str(e).lower()
         if "already" in err or "exists" in err:
@@ -400,5 +418,6 @@ def _clear_session():
               "subjects","progress_log","profile","schedule_slots",
               "weak_results","sr_results","pred_results","study_time_result",
               "ai_ins","chat_messages","week_offset","auth_tab",
-              "onboarding_done","onboarding_step","onboarding_skipped"]:
+              "onboarding_done","onboarding_step","onboarding_skipped",
+              "_access_token","_refresh_token","_last_active_ts"]:
         st.session_state.pop(k, None)

@@ -212,7 +212,7 @@ def show():
     # ── Log Session ───────────────────────────────────────────────────
     st.markdown("<br>", unsafe_allow_html=True)
     with st.expander("📝 Log Completed Session", expanded=True):
-        with st.form("focus_log_form"):
+        with st.form("focus_log_form", clear_on_submit=True):
             r1, r2, r3 = st.columns(3)
             log_subj   = r1.text_input("Subject", chosen_name)
             log_topic  = r2.text_input("Topic Studied", placeholder="e.g. Neural Networks")

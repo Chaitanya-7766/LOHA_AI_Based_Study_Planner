@@ -48,6 +48,9 @@ def save_profile(profile: dict):
             "peak_time": profile.get("peak_time"),
             "learning_style": profile.get("learning_style"),
         }
+        # Preserve onboarding_done — never overwrite it with False once set
+        if st.session_state.get("onboarding_done"):
+            payload["onboarding_done"] = True
         sb.table("profiles").upsert(payload, on_conflict="id").execute()
 
 # Subjects

@@ -29,8 +29,39 @@ def should_show():
     # If user has subjects already, they've been through setup — skip onboarding
     if st.session_state.get("subjects"):
         st.session_state.onboarding_done = True
+        _persist_onboarding_done()
         return False
+    # Secondary check: if profile has an exam_date set, user has been through setup
+    profile = st.session_state.get("profile", {})
+    if profile.get("exam_date") and profile.get("full_name"):
+        # Check DB directly for subjects in case session_state load was incomplete
+        try:
+            import db
+            uid = st.session_state.get("user_id")
+            sb = db.get_supabase()
+            if sb and uid:
+                subj_rows = sb.table("subjects").select("id").eq("user_id", uid).limit(1).execute().data
+                if subj_rows:
+                    st.session_state.onboarding_done = True
+                    _persist_onboarding_done()
+                    return False
+        except:
+            pass
     return True
+
+
+def _persist_onboarding_done():
+    """Silently mark onboarding complete in Supabase so it survives logout/login."""
+    try:
+        import db
+        sb  = db.get_supabase()
+        uid = st.session_state.get("user_id")
+        if sb and uid:
+            sb.table("profiles").upsert(
+                {"id": uid, "onboarding_done": True}, on_conflict="id"
+            ).execute()
+    except:
+        pass
 
 def show():
     step = st.session_state.get("onboarding_step", 0)
@@ -603,6 +634,11 @@ def _step_schedule():
             st.success(f"✨ Generated {len(slots)} schedule slots!")
         except Exception as e:
             st.warning(f"Schedule will be generated on the Schedule page. ({e})")
+        # ✅ Mark onboarding as done in DB as soon as schedule is generated.
+        # This prevents the onboarding from reappearing if user logs out before
+        # reaching the final "Start Using LOHA" button on step 4.
+        st.session_state.onboarding_done = True
+        _persist_onboarding_done()
         st.session_state.onboarding_step = 4
         st.rerun()
 

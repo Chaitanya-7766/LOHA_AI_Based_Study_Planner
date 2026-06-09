@@ -291,18 +291,24 @@ def _boot_user(user, name):
     if st.session_state.get("user_id") == uid and st.session_state.get("user"):
         return
     st.session_state.update({
-        "user":          user,
-        "user_id":       uid,
-        "user_name":     name,
-        "user_email":    getattr(user, "email", None) or (user.get("email","") if isinstance(user, dict) else ""),
-        "user_avatar":   name[0].upper() if name else "U",
+        "user":             user,
+        "user_id":          uid,
+        "user_name":        name,
+        "user_email":       getattr(user, "email", None) or (user.get("email","") if isinstance(user, dict) else ""),
+        "user_avatar":      name[0].upper() if name else "U",
         # Start empty — will be filled by _load_user_data
-        "subjects":      [],
-        "progress_log":  [],
-        "profile":       {"full_name": name},
-        "schedule_slots":[],
-        "week_offset":   0,
-        "chat_messages": [],
+        "subjects":         [],
+        "progress_log":     [],
+        "profile":          {"full_name": name},
+        "schedule_slots":   [],
+        "week_offset":      0,
+        "chat_messages":    [],
+        # Reset onboarding flags — _load_user_data will restore the correct
+        # value from Supabase (onboarding_done=True if already completed).
+        # This prevents stale True values from a previous session leaking in.
+        "onboarding_done":    False,
+        "onboarding_step":    0,
+        "onboarding_skipped": False,
     })
     for k in ["weak_results","sr_results","pred_results","study_time_result","ai_ins"]:
         st.session_state.pop(k, None)

@@ -9,7 +9,16 @@ SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJ
 def get_supabase() -> Client:
     if not SUPABASE_URL or not SUPABASE_KEY:
         return None
-    return create_client(SUPABASE_URL, SUPABASE_KEY)
+    client = create_client(SUPABASE_URL, SUPABASE_KEY)
+    try:
+        import streamlit as st
+        access_token = st.session_state.get("_access_token")
+        refresh_token = st.session_state.get("_refresh_token")
+        if access_token and refresh_token:
+            client.auth.set_session(access_token, refresh_token)
+    except Exception:
+        pass
+    return client
 
 def _uid():
     return st.session_state.get("user_id")

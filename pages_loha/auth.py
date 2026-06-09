@@ -44,6 +44,10 @@ def signout(reason=None):
     for key in list(st.session_state.keys()):
         del st.session_state[key]
 
+    # ✅ Clear query params
+    st.query_params.pop("_access_token", None)
+    st.query_params.pop("_refresh_token", None)
+
     # ✅ Force logout flag and optional message
     st.session_state["_force_logout"] = True
     if reason:
@@ -62,6 +66,14 @@ def _restore_session():
     If a JWT is still valid, restore the user without showing the login form.
     """
     try:
+        # Check query parameters for session tokens (e.g. after page refresh)
+        if "_access_token" in st.query_params and "_refresh_token" in st.query_params:
+            st.session_state["_access_token"] = st.query_params["_access_token"]
+            st.session_state["_refresh_token"] = st.query_params["_refresh_token"]
+            # Clean up the URL query params immediately so they don't linger
+            st.query_params.pop("_access_token", None)
+            st.query_params.pop("_refresh_token", None)
+
         sb = db.get_supabase()
         if not sb:
             return False
@@ -175,6 +187,8 @@ def _signin_form():
             if result.get("session"):
                 st.session_state["_access_token"] = result["session"].access_token
                 st.session_state["_refresh_token"] = result["session"].refresh_token
+                st.query_params["_access_token"] = result["session"].access_token
+                st.query_params["_refresh_token"] = result["session"].refresh_token
             _boot_user(result["user"], result.get("name", email.split("@")[0]))
             st.session_state["_auth_success"] = True
             for k in ["auth_tab", "signin_email", "signin_password"]:
@@ -210,6 +224,8 @@ def _signup_form():
                 if result.get("session"):
                     st.session_state["_access_token"] = result["session"].access_token
                     st.session_state["_refresh_token"] = result["session"].refresh_token
+                    st.query_params["_access_token"] = result["session"].access_token
+                    st.query_params["_refresh_token"] = result["session"].refresh_token
                 _boot_user(result["user"], name.strip())
                 # Clear auth UI state so no login portal flashes on the next render
                 st.session_state["_auth_success"] = True

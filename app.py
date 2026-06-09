@@ -352,5 +352,3 @@ elif selected == "Analytics":
 elif selected == "Setup":
     from pages_loha import setup;       setup.show()
 
-from pages_loha.floating_chatbot import render as render_floating_chatbot
-render_floating_chatbot(selected)

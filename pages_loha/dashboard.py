@@ -7,7 +7,7 @@ from ml_engine import calculate_streak, compute_readiness_score
 from pages_loha.ui_helpers import panel_open, panel_close, insight_card, subject_perf_bars, COLS
 
 def show():
-    subjects = st.session_state.get("subjects", [])
+     = st.session_state.get("subjects", [])
     logs     = st.session_state.get("progress_log", [])
     profile  = st.session_state.get("profile", {})
 
